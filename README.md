@@ -1,8 +1,10 @@
 # nextcloud-backup-restore
 Nextcloud backup and restore scripts using BorgBackup (short: Borg) Borg is a deduplicating backup program. 
 
-Scripts to automate backup and restore of Nextcloud 12.x 
+Scripts to automate backup and restore where Nextcloud is running in docker containers and managed by docker-compose. 
 Each individual archive will contain the nextcloud config folder, nextcloud theme folder, nextcloud data folder and the db dump. As such, an archive contains a snapshot in time and can be used to restore via the included ncrestore.sh script.
+
+Credit: https://github.com/whisperdancer/nextcloud-backup-restore
 
 Credit: https://github.com/DecaTec/Nextcloud-Backup-Restore
 
@@ -26,7 +28,7 @@ To backup:
 3. Run the backup: sudo bash ./ncbackup.sh
 
 To restore:
-
+W.I.P
 1. List the Borg archives to retrieve the name of the archive you want to restore: sudo borg list /path-to-repo
 2. Extract the database into working folder. sudo borg extract /path/to-archive::'archive name' /home/work Do a ls-l to get db name.
 3. Change to scripts folder i.e. cd scripts/backup
