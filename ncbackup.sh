@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Setting this, so the repo does not need to be given on the commandline:
-export BORG_REPO=/path-to-your-repo
+export BORG_REPO=/opt2/borg/nextcloud
 
 # Setting this, so you won't be asked for your repository passphrase:
 #export BORG_PASSPHRASE='XYZl0ngandsecurepa_55_phrasea&&123'
@@ -35,19 +35,20 @@ fi
 # nextcloud vars
 #
 # nextcloudFileDir = the folder of your nextcloud installation
-nextcloudFileDir="/var/www/nextcloud"
-nextcloudDataDir="/var/nc_data"
+nextcloudFileDir="/opt1/docker/nextcloud/nextcloud"
+nextcloudDataDir="/opt1/docker/nextcloud/nextcloud/data"
+nextcloudDockerComposeDir="/root/dockerforge/nextcloud"
 # dbdumpdir = the temp folder for db dumps
-dbdumpdir="/home/pi/dbdump"
+dbdumpdir="/opt1/docker/nextcloud/dbdump"
 # dbdumpfilename = the name of the db dump file
 dbdumpfilename=$(hostname)-nextcloud-db.sql-$(date +"%Y-%m-%d %H:%M:%S")
 
 #
 # database vars, substitute your own values here
 #
-dbUser="nextcloud"
-dbPassword="nextcloud"
-nextcloudDatabase="nextcloud"
+dbUser="root"
+#dbPassword="nextcloud"
+#nextcloudDatabase="nextcloud"
 
 # exclude files and folders. You can tweak these and/or add more. These are just the vars. They vars are then appended to borg create
 exclude_updater="'$nextcloudDataDir/updater-*'"
@@ -57,7 +58,7 @@ exclude_updater_hidden="'$nextcloudDataDir/updater-*/.*'"
 # webserver vars
 #
 webserverUser="www-data"
-webserverServiceName="apache2"
+webserverServiceName="app"
 
 info "Starting backup..."
 
@@ -69,9 +70,10 @@ echo $exclude_updater_hidden
 # Set maintenance mode
 #
 echo "Set maintenance mode for Nextcloud..."
-cd "${nextcloudFileDir}"
-sudo -u "${webserverUser}" php occ maintenance:mode --on
-cd ~
+cd "${nextcloudDockerComposeDir}"
+docker-compose exec --user "${webserverUser}" "${webserverServiceName}" php occ maintenance:mode --on
+#sudo -u "${webserverUser}" php occ maintenance:mode --on
+#cd ~
 echo "Done"
 echo
 
@@ -79,7 +81,8 @@ echo
 # Stop web server
 #
 echo "Stopping web server..."
-service "${webserverServiceName}" stop
+docker-compose stop "${webserverServiceName}"
+#service "${webserverServiceName}" stop
 echo "Done"
 echo
 
@@ -88,7 +91,8 @@ echo
 # Backup DB. The db is dumped to a temp file folder. It will be picked up by the archive. Then removed later.
 #
 echo "Backup Nextcloud database..."
-mysqldump --single-transaction -h localhost -u "${dbUser}" -p"${dbPassword}" "${nextcloudDatabase}" > "${dbdumpdir}/${dbdumpfilename}"
+docker-compose exec db bash -c '/usr/bin/mysqldump --single-transaction -u root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' > "${dbdumpdir}/${dbdumpfilename}"
+#mysqldump --single-transaction -h localhost -u "${dbUser}" -p"${dbPassword}" "${nextcloudDatabase}" > "${dbdumpdir}/${dbdumpfilename}"
 echo "mysql dump successful. Dump folder ${dbdumpdir}"
 echo "Listing dump file..."
 ls -l ${dbdumpdir}
@@ -137,8 +141,8 @@ borg prune                          \
     -v                              \
     --prefix '{hostname}-'          \
     --show-rc                       \
-    --keep-daily=5                  \
-    --keep-weekly=2                 \
+    --keep-daily=1                  \
+    --keep-weekly=1                 \
     --keep-monthly=1                \
 
 prune_exit=$?
@@ -148,7 +152,8 @@ prune_exit=$?
 #
 echo
 echo "Starting web server..."
-service "${webserverServiceName}" start
+docker-compose start "${webserverServiceName}"
+#service "${webserverServiceName}" start
 echo "Done"
 echo
 
@@ -157,8 +162,9 @@ echo
 # Disable maintenance mode
 #
 echo "Switching off maintenance mode..."
-cd "${nextcloudFileDir}"
-sudo -u "${webserverUser}" php occ maintenance:mode --off
+#cd "${nextcloudFileDir}"
+docker-compose exec --user "${webserverUser}" "${webserverServiceName}" php occ maintenance:mode --off
+#sudo -u "${webserverUser}" php occ maintenance:mode --off
 cd ~
 echo "Done"
 echo
