@@ -41,7 +41,7 @@ nextcloudDockerComposeDir="/root/dockerforge/nextcloud"
 # dbdumpdir = the temp folder for db dumps
 dbdumpdir="/opt1/docker/nextcloud/dbdump"
 # dbdumpfilename = the name of the db dump file
-dbdumpfilename=$(hostname)-nextcloud-db.sql-$(date +"%Y-%m-%d %H:%M:%S")
+dbdumpfilename=$(hostname)-nextcloud-db.sql-$(date +"%Y-%m-%d_%H.%M.%S")
 
 #
 # database vars, substitute your own values here
